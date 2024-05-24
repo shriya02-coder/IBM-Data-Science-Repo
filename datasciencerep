@@ -1,0 +1,18 @@
+@BeforeEach
+    public void setUp() {
+        messagePayload = "{\"RequestID\": 12345, \"EventType\": \"MATLetterTrigger\", \"Source\": \"TestSource\", \"LetterType\": \"TestLetter\"}";
+        when(kafkaMessage.getPayload()).thenReturn(messagePayload);
+    }
+
+    @Test
+    public void testSubscriber() throws Exception {
+        when(messageProcessingHelper.isMessageExist(anyString(), anyString())).thenReturn(false);
+        when(messageProcessorManager.getProcessor(any(ProcessorEnum.class))).thenReturn(mock(MessageProcessor.class));
+
+        listener.subscriber(kafkaMessage, acknowledgment);
+
+        verify(acknowledgment, times(1)).acknowledge();
+        verify(messageProcessingHelper, times(1)).markMessageToProcessed(anyString(), anyString(), anyString(), anyString());
+        verify(messageProcessorManager, times(1)).getProcessor(any(ProcessorEnum.class));
+        verify(letterDao, never()).storeFileInDB(anyString(), anyString(), any());
+    }
